@@ -13,7 +13,7 @@ defmodule Rinha.Application do
       {Ecto.Migrator,
         repos: Application.fetch_env!(:rinha, :ecto_repos),
         skip: skip_migrations?()},
-      Rinha.PubSub
+      Rinha.Queue
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
