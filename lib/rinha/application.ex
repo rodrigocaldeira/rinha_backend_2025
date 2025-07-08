@@ -11,9 +11,9 @@ defmodule Rinha.Application do
       {Bandit, plug: Rinha.Router},
       Rinha.Repo,
       {Ecto.Migrator,
-        repos: Application.fetch_env!(:rinha, :ecto_repos),
-        skip: skip_migrations?()},
-      Rinha.Queue
+       repos: Application.fetch_env!(:rinha, :ecto_repos), skip: skip_migrations?()},
+      Rinha.Queue,
+      Rinha.Worker
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -3,17 +3,20 @@ defmodule Rinha.Router do
 
   # alias Plug.Conn
 
-  plug Plug.Logger
-  plug Plug.Parsers,
+  plug(Plug.Logger)
+
+  plug(Plug.Parsers,
     parsers: [:urlencoded, :json],
     json_decoder: Jason
-    
-  plug :match
-  plug :dispatch
+  )
+
+  plug(:match)
+  plug(:dispatch)
 
   get "/payments-summary" do
-    {:ok, summary} = Rinha.summary(conn.query_params)
-                     |> Jason.encode
+    {:ok, summary} =
+      Rinha.summary(conn.query_params)
+      |> Jason.encode()
 
     conn
     |> put_resp_content_type("application/json")
@@ -21,7 +24,7 @@ defmodule Rinha.Router do
   end
 
   post "/payments" do
-    Rinha.pay(conn.body_params)
+    Rinha.register_payment(conn.body_params)
     |> case do
       :ok -> send_resp(conn, 201, "")
       :error -> bad_request(conn)

@@ -1,6 +1,18 @@
 defmodule Rinha do
-  def pay(%{"correlationId" => _, "amount" => _}), do: :ok
-  def pay(_), do: :error
+  def register_payment(%{"correlationId" => correlation_id, "amount" => amount}) do
+    message = %{
+      correlation_id: correlation_id,
+      amount: amount
+    }
+
+    Rinha.Queue.enqueue(message)
+  end
+
+  def register_payment(_), do: :error
+
+  def pay(payment) do
+    IO.inspect(payment)
+  end
 
   def summary(params) do
     IO.inspect(params)
