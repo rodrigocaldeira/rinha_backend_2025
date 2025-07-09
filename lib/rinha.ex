@@ -1,8 +1,9 @@
 defmodule Rinha do
   alias Ecto.Multi
+  alias Rinha.Entities.Payment
+  alias Rinha.Processor.Client
   alias Rinha.Repo
   alias Rinha.Schemas.Support.Error
-  alias Rinha.Entities.Payment
 
   require Logger
 
@@ -26,6 +27,9 @@ defmodule Rinha do
   def pay(payment) do
     Multi.new()
     |> Multi.insert(:payment, Payment.insert(payment))
+    |> Multi.run(:processor, fn _, %{payment: payment} ->
+      Client.pay(payment)
+    end)
     |> Multi.update(:set_processor, fn %{payment: payment} ->
       Payment.set_processor(payment, "default")
     end)
@@ -39,6 +43,13 @@ defmodule Rinha do
         error = Error.extract_error(operation, changeset)
         Logger.warning("Error during payment #{inspect(payment)}: #{error}")
     end
+  end
+
+  defdelegate purge, to: Payment
+
+  def purge_all do
+    __MODULE__.purge
+    Client.purge
   end
 
   def summary(_params) do

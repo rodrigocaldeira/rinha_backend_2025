@@ -1,8 +1,6 @@
 defmodule Rinha.Router do
   use Plug.Router
 
-  # alias Plug.Conn
-
   plug(Plug.Logger)
 
   plug(Plug.Parsers,
@@ -29,6 +27,12 @@ defmodule Rinha.Router do
       :ok -> send_resp(conn, 201, "")
       :error -> bad_request(conn)
     end
+  end
+
+  post "/purge-payments" do
+    Rinha.purge
+
+    send_resp(conn, 200, "")
   end
 
   match _ do
