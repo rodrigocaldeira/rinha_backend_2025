@@ -50,8 +50,8 @@ defmodule Rinha do
   defdelegate purge, to: Payment
 
   def purge_all do
-    __MODULE__.purge
-    Client.purge
+    __MODULE__.purge()
+    Client.purge()
   end
 
   def summary(_params) do

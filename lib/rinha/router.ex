@@ -30,7 +30,7 @@ defmodule Rinha.Router do
   end
 
   post "/purge-payments" do
-    Rinha.purge
+    Rinha.purge()
 
     send_resp(conn, 200, "")
   end

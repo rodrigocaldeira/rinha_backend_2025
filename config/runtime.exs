@@ -11,8 +11,8 @@ if config_env() == :prod do
     database: database_path,
     pool_size: System.get_env("POOL_SIZE", "5") |> String.to_integer()
 
-  config :rinha, services: 
-    [
+  config :rinha,
+    services: [
       %{
         name: System.fetch_env!("DEFAULT_SERVICE_NAME"),
         url: System.fetch_env!("DEFAULT_SERVICE_URL")
@@ -23,4 +23,3 @@ if config_env() == :prod do
       }
     ]
 end
-

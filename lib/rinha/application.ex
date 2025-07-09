@@ -15,10 +15,12 @@ defmodule Rinha.Application do
       {Rinha.Processor.Services, @services},
       Rinha.Queue,
       {Rinha.Worker, name: QueueWorker, job: &Rinha.pay/0},
-      {Rinha.Worker, name: ServicesHealthWorker, job: fn ->
-        Process.sleep((:rand.uniform(5) + 5) * 1_000)
-        Rinha.Processor.Client.service_health()
-      end}
+      {Rinha.Worker,
+       name: ServicesHealthWorker,
+       job: fn ->
+         Process.sleep((:rand.uniform(5) + 5) * 1_000)
+         Rinha.Processor.Client.service_health()
+       end}
     ]
 
     opts = [strategy: :one_for_one, name: Rinha.Supervisor]

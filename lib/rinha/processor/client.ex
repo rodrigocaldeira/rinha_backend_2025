@@ -8,7 +8,7 @@ defmodule Rinha.Processor.Client do
   def pay(%InternalPayment{} = internal_payment) do
     payment = Payment.new(internal_payment)
 
-    service = Services.get_service
+    service = Services.get_service()
 
     Req.post("#{service.url}/payments", json: payment)
     |> case do
@@ -22,17 +22,18 @@ defmodule Rinha.Processor.Client do
   end
 
   def service_health do
-    Services.all_services
+    Services.all_services()
     |> Enum.each(fn service ->
       Req.get("#{service.url}/payments/service-health")
       |> case do
-        {:ok, %Req.Response{
-          status: 200, 
-          body: %{
-            "failing" => failing, 
-            "minResponseTime" => minResponseTime
-          }}} ->
-          
+        {:ok,
+         %Req.Response{
+           status: 200,
+           body: %{
+             "failing" => failing,
+             "minResponseTime" => minResponseTime
+           }
+         }} ->
           Logger.debug("Service #{service.name} health: #{failing} - #{minResponseTime}")
           Services.set_service_health(service.name, failing, minResponseTime)
 
@@ -45,11 +46,12 @@ defmodule Rinha.Processor.Client do
   end
 
   def purge do
-    Services.all_services
+    Services.all_services()
     |> Enum.each(fn service ->
       Req.post("#{service.url}/admin/purge-payments",
-        headers: [{"X-Rinha-Token", "123"}])
-      end)
+        headers: [{"X-Rinha-Token", "123"}]
+      )
+    end)
 
     :ok
   end

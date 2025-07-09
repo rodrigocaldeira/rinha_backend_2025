@@ -17,7 +17,8 @@ defmodule Rinha.Processor.Services do
   end
 
   def set_service_health(name, failing, min_response_time) do
-    GenServer.cast(ProcessorServices,
+    GenServer.cast(
+      ProcessorServices,
       {:set_service_health, name, failing, min_response_time}
     )
   end
@@ -35,14 +36,15 @@ defmodule Rinha.Processor.Services do
   @impl true
   def handle_cast({:set_service_health, name, failing, min_response_time}, services) do
     service = %{
-      get_service_by_name(services, name) |
-      failing: failing,
-      min_response_time: min_response_time
+      get_service_by_name(services, name)
+      | failing: failing,
+        min_response_time: min_response_time
     }
 
-    services = services
-              |> Enum.filter(&(&1.name != name))
-              |> Kernel.++([service])
+    services =
+      services
+      |> Enum.filter(&(&1.name != name))
+      |> Kernel.++([service])
 
     {:noreply, services}
   end
