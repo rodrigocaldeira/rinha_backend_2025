@@ -1,6 +1,4 @@
 defmodule Rinha.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
@@ -12,12 +10,20 @@ defmodule Rinha.Application do
       Rinha.Repo,
       {Ecto.Migrator,
        repos: Application.fetch_env!(:rinha, :ecto_repos), skip: skip_migrations?()},
+      {Rinha.Processor.Services,
+        [
+          %{name: "default", url: "http://localhost:8001"},
+          %{name: "fallback", url: "http://localhost:8002"}
+        ]
+      },
       Rinha.Queue,
-      Rinha.Worker
+      {Rinha.Worker, name: QueueWorker, job: &Rinha.pay/0},
+      {Rinha.Worker, name: ServicesHealthWorker, job: fn ->
+        Process.sleep((:rand.uniform(5) + 5) * 1_000)
+        Rinha.Processor.Client.service_health()
+      end}
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Rinha.Supervisor]
     Supervisor.start_link(children, opts)
   end

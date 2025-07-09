@@ -24,14 +24,16 @@ defmodule Rinha do
     :error
   end
 
-  def pay(payment) do
+  def pay do
+    payment = Rinha.Queue.dequeue()
+
     Multi.new()
     |> Multi.insert(:payment, Payment.insert(payment))
     |> Multi.run(:processor, fn _, %{payment: payment} ->
       Client.pay(payment)
     end)
-    |> Multi.update(:set_processor, fn %{payment: payment} ->
-      Payment.set_processor(payment, "default")
+    |> Multi.update(:set_processor, fn %{processor: processor, payment: payment} ->
+      Payment.set_processor(payment, processor)
     end)
     |> Repo.transact()
     |> IO.inspect()

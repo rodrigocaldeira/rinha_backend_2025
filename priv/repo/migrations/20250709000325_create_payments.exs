@@ -11,5 +11,6 @@ defmodule Rinha.Repo.Migrations.CreatePayments do
     end
 
     create unique_index(:payments, [:correlation_id])
+    create index(:payments, [:processor])
   end
 end

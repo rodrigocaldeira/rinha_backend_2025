@@ -2,16 +2,24 @@ defmodule Rinha.Worker do
   use GenServer
 
   @impl true
-  def init(_), do: {:ok, [], {:continue, :process_message}}
+  def init(args), do: {:ok, args, {:continue, :execute}}
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, [], name: Worker)
+  def start_link(args) do
+    name = Keyword.get(args, :name)
+    job = Keyword.get(args, :job)
+    GenServer.start_link(__MODULE__, %{job: job}, name: name)
   end
 
   @impl true
-  def handle_continue(:process_message, _) do
-    payment = Rinha.Queue.dequeue()
-    Rinha.pay(payment)
-    {:noreply, [], {:continue, :process_message}}
+  def handle_continue(:execute, %{job: job} = state) do
+    job.()
+    {:noreply, state, {:continue, :execute}}
+  end
+
+  def child_spec(args) do
+    %{
+      id: Keyword.get(args, :name, Worker),
+      start: {Rinha.Worker, :start_link, [args]}
+    }
   end
 end
