@@ -1,7 +1,5 @@
 defmodule Rinha.Schemas.Support.Amount do
-  def to_float(number) do
-    number / 100
-  end
+  def to_float(number), do: number / 100
 
   def to_integer(number) do
     number

@@ -3,6 +3,8 @@ defmodule Rinha.Application do
 
   use Application
 
+  @services Application.compile_env(:rinha, :services)
+
   @impl true
   def start(_type, _args) do
     children = [
@@ -10,12 +12,7 @@ defmodule Rinha.Application do
       Rinha.Repo,
       {Ecto.Migrator,
        repos: Application.fetch_env!(:rinha, :ecto_repos), skip: skip_migrations?()},
-      {Rinha.Processor.Services,
-        [
-          %{name: "default", url: "http://localhost:8001"},
-          %{name: "fallback", url: "http://localhost:8002"}
-        ]
-      },
+      {Rinha.Processor.Services, @services},
       Rinha.Queue,
       {Rinha.Worker, name: QueueWorker, job: &Rinha.pay/0},
       {Rinha.Worker, name: ServicesHealthWorker, job: fn ->

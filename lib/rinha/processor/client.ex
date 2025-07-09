@@ -49,7 +49,7 @@ defmodule Rinha.Processor.Client do
     |> Enum.each(fn service ->
       Req.post("#{service.url}/admin/purge-payments",
         headers: [{"X-Rinha-Token", "123"}])
-    end)
+      end)
 
     :ok
   end
