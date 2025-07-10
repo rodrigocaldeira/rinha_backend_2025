@@ -25,25 +25,17 @@ defmodule Rinha do
   end
 
   def pay do
-    payment = Rinha.Queue.dequeue()
+    payment_params = Rinha.Queue.dequeue()
 
-    Multi.new()
-    |> Multi.insert(:payment, Payment.insert(payment))
-    |> Multi.run(:processor, fn _, %{payment: payment} ->
-      Client.pay(payment)
-    end)
-    |> Multi.update(:set_processor, fn %{processor: processor, payment: payment} ->
-      Payment.set_processor(payment, processor)
-    end)
-    |> Repo.transact()
-    |> IO.inspect()
+    Payment.insert(payment_params)
     |> case do
-      {:ok, _} ->
-        Logger.info("Successful payment #{inspect(payment)}")
+      {:ok, payment} ->
+        Logger.info("Payment #{payment_params["correlation_id"]} registered. Completing...")
+        complete_payment(payment)
 
-      {:error, operation, changeset, _} ->
-        error = Error.extract_error(operation, changeset)
-        Logger.warning("Error during payment #{inspect(payment)}: #{error}")
+      {:error, changeset} ->
+        error = Error.extract_error(:payment, changeset)
+        Logger.warning("Error registering payment #{payment_params}: #{error}")
     end
   end
 
@@ -53,5 +45,31 @@ defmodule Rinha do
   def purge_all do
     __MODULE__.purge()
     Client.purge()
+  end
+
+  def retry_failed_payments do
+    Payment.list_failed_payments()
+    |> Enum.each(&complete_payment/1)
+
+    :ok
+  end
+
+  defp complete_payment(payment) do
+    Multi.new()
+    |> Multi.run(:processor, fn _, _ ->
+      Client.pay(payment)
+    end)
+    |> Multi.update(:set_processor, fn %{processor: processor} ->
+      Payment.set_processor(payment, processor)
+    end)
+    |> Repo.transact()
+    |> case do
+      {:ok, _} ->
+        Logger.info("Payment #{payment.correlation_id} completed.")
+
+      {:error, operation, changeset, _} ->
+        error = Error.extract_error(operation, changeset)
+        Logger.warning("Error during payment #{payment.correlation_id}: #{error}")
+    end
   end
 end

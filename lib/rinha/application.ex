@@ -20,6 +20,12 @@ defmodule Rinha.Application do
        job: fn ->
          Process.sleep((:rand.uniform(5) + 5) * 1_000)
          Rinha.Processor.Client.service_health()
+       end},
+      {Rinha.Worker,
+       name: RetryFailedPaymentsWorker,
+       job: fn ->
+         Process.sleep((:rand.uniform(5) + 5) * 1_000)
+         Rinha.retry_failed_payments()
        end}
     ]
 

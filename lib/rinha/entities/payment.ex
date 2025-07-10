@@ -10,6 +10,7 @@ defmodule Rinha.Entities.Payment do
     payment = %{payment | amount: Amount.to_integer(payment.amount)}
 
     PaymentSchema.changeset(%PaymentSchema{}, payment)
+    |> Repo.insert()
   end
 
   def set_processor(payment, processor) do
@@ -19,7 +20,6 @@ defmodule Rinha.Entities.Payment do
   def purge, do: Repo.delete_all(PaymentSchema)
 
   def summary(params) do
-    IO.inspect(params)
     from_param = params["from"]
     to_param = params["to"]
 
@@ -46,7 +46,7 @@ defmodule Rinha.Entities.Payment do
         totalRequests: count(p.id),
         totalAmount: sum(p.amount)
       },
-      where: ^conditions
+      where: not is_nil(p.processor) and ^conditions
     )
     |> Repo.all()
     |> Map.new(fn payment ->
@@ -58,6 +58,14 @@ defmodule Rinha.Entities.Payment do
       {String.to_existing_atom(payment.processor), values}
     end)
     |> ensure_summary_integrity()
+  end
+
+  def list_failed_payments do
+    from(p in PaymentSchema,
+      select: p,
+      where: is_nil(p.processor)
+    )
+    |> Repo.all()
   end
 
   @default_summary_aggregates %{totalRequests: 0, totalAmount: 0}
