@@ -34,7 +34,6 @@ defmodule Rinha.Processor.Client do
              "minResponseTime" => minResponseTime
            }
          }} ->
-          Logger.debug("Service #{service.name} health: #{failing} - #{minResponseTime}")
           Services.set_service_health(service.name, failing, minResponseTime)
 
         error ->

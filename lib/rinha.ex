@@ -48,22 +48,10 @@ defmodule Rinha do
   end
 
   defdelegate purge, to: Payment
+  defdelegate summary(params), to: Payment
 
   def purge_all do
     __MODULE__.purge()
     Client.purge()
-  end
-
-  def summary(_params) do
-    %{
-      default: %{
-        totalRequests: 0,
-        totalAmount: 0.0
-      },
-      fallback: %{
-        totalRequests: 0,
-        totalAmount: 0.0
-      }
-    }
   end
 end

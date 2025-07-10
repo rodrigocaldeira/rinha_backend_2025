@@ -29,7 +29,7 @@ defmodule Rinha.Processor.Services do
   end
 
   def handle_call(:get_service, _from, services) do
-    service = get_service_by_name(services, "default")
+    service = get_service_by_name(services, "fallback")
     {:reply, service, services}
   end
 
