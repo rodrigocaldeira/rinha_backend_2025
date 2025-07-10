@@ -8,16 +8,21 @@ defmodule Rinha.Processor.Client do
   def pay(%InternalPayment{} = internal_payment) do
     payment = Payment.new(internal_payment)
 
-    service = Services.get_service()
+    case Services.get_service() do
+      {:ok, service} ->
+        Req.post("#{service.url}/payments", json: payment)
+        |> case do
+          {:ok, %Req.Response{status: 200}} ->
+            {:ok, service.name}
 
-    Req.post("#{service.url}/payments", json: payment)
-    |> case do
-      {:ok, %Req.Response{status: 200}} ->
-        {:ok, service.name}
+          error ->
+            Logger.error("Error sending payment to processor #{service.name}: #{inspect(error)}")
+            {:error, :processor_error}
+        end
 
-      error ->
-        IO.inspect(error)
-        {:error, :processor_error}
+      {:error, :no_service_available} = error ->
+        Logger.error("No service available at the moment")
+        error
     end
   end
 

@@ -29,7 +29,25 @@ defmodule Rinha.Processor.Services do
   end
 
   def handle_call(:get_service, _from, services) do
-    service = get_service_by_name(services, "fallback")
+    default = get_service_by_name(services, "default")
+    fallback = get_service_by_name(services, "fallback")
+
+    service =
+      cond do
+        default.failing and fallback.failing ->
+          {:error, :no_service_available}
+
+        default.failing ->
+          {:ok, fallback}
+
+        default.min_response_time >= 1_000 and
+            fallback.min_response_time <= 200 ->
+          {:ok, fallback}
+
+        true ->
+          {:ok, default}
+      end
+
     {:reply, service, services}
   end
 
