@@ -10,6 +10,8 @@ defmodule Rinha.Processor.Client do
 
     case Services.get_service() do
       {:ok, service} ->
+        Logger.info("Sending payment #{payment.correlationId} to #{service.name}")
+
         Req.post("#{service.url}/payments", json: payment)
         |> case do
           {:ok, %Req.Response{status: 200}} ->

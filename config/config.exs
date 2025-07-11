@@ -3,6 +3,7 @@ import Config
 config :rinha, ecto_repos: [Rinha.Repo]
 
 config :rinha,
+  port: System.get_env("PORT", "8080") |> String.to_integer(),
   services: [
     %{
       name: System.get_env("DEFAULT_SERVICE_NAME", "default"),

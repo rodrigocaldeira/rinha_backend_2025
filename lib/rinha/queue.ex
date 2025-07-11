@@ -25,18 +25,12 @@ defmodule Rinha.Queue do
 
   @impl true
   def handle_info({:reply, from}, []) do
-    Process.send_after(Queue, {:reply, from}, 100)
+    Process.send(Queue, {:reply, from}, [])
     {:noreply, []}
   end
 
   def handle_info({:reply, from}, [message | rest]) do
     GenServer.reply(from, message)
     {:noreply, rest}
-  end
-
-  @impl true
-  def handle_continue(message, state) do
-    IO.inspect(message)
-    {:noreply, state}
   end
 end

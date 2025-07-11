@@ -30,7 +30,7 @@ defmodule Rinha do
     Payment.insert(payment_params)
     |> case do
       {:ok, payment} ->
-        Logger.info("Payment #{payment_params["correlation_id"]} registered. Completing...")
+        Logger.info("Payment #{payment_params.correlation_id} registered. Completing...")
         complete_payment(payment)
 
       {:error, changeset} ->
@@ -45,13 +45,6 @@ defmodule Rinha do
   def purge_all do
     __MODULE__.purge()
     Client.purge()
-  end
-
-  def retry_failed_payments do
-    Payment.list_failed_payments()
-    |> Enum.each(&complete_payment/1)
-
-    :ok
   end
 
   defp complete_payment(payment) do
@@ -71,5 +64,12 @@ defmodule Rinha do
         error = Error.extract_error(operation, changeset)
         Logger.warning("Error during payment #{payment.correlation_id}: #{error}")
     end
+  end
+
+  def retry_failed_payments do
+    Payment.list_failed_payments()
+    |> Enum.each(&complete_payment/1)
+
+    :ok
   end
 end

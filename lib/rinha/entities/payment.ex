@@ -23,21 +23,22 @@ defmodule Rinha.Entities.Payment do
     from_param = params["from"]
     to_param = params["to"]
 
-    conditions = true
+    date_conditions =
+      cond do
+        from_param && to_param ->
+          dynamic([p], p.inserted_at >= ^from_param and p.inserted_at <= ^to_param)
 
-    conditions =
-      if from_param do
-        dynamic([p], p.inserted_at >= ^from_param)
-      else
-        conditions
+        from_param ->
+          dynamic([p], p.inserted_at >= ^from_param)
+
+        to_param ->
+          dynamic([p], p.inserted_at <= ^to_param)
+
+        true ->
+          true
       end
 
-    conditions =
-      if to_param do
-        dynamic([p], p.inserted_at <= ^to_param)
-      else
-        conditions
-      end
+    conditions = dynamic([p], not is_nil(p.processor) and ^date_conditions)
 
     from(p in PaymentSchema,
       group_by: p.processor,
@@ -46,7 +47,7 @@ defmodule Rinha.Entities.Payment do
         totalRequests: count(p.id),
         totalAmount: sum(p.amount)
       },
-      where: not is_nil(p.processor) and ^conditions
+      where: ^conditions
     )
     |> Repo.all()
     |> Map.new(fn payment ->
@@ -68,11 +69,11 @@ defmodule Rinha.Entities.Payment do
     |> Repo.all()
   end
 
-  @default_summary_aggregates %{totalRequests: 0, totalAmount: 0}
+  @summary_aggregates %{totalRequests: 0, totalAmount: 0}
 
   defp ensure_summary_integrity(summary) do
     summary
-    |> Map.put_new(:default, @default_summary_aggregates)
-    |> Map.put_new(:fallback, @default_summary_aggregates)
+    |> Map.put_new(:default, @summary_aggregates)
+    |> Map.put_new(:fallback, @summary_aggregates)
   end
 end

@@ -7,7 +7,7 @@ defmodule Rinha.Schemas.Payment do
     field(:amount, :integer)
     field(:processor)
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   @required_fields [:correlation_id, :amount]

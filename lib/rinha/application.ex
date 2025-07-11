@@ -3,16 +3,14 @@ defmodule Rinha.Application do
 
   use Application
 
-  @services Application.compile_env(:rinha, :services)
-
   @impl true
   def start(_type, _args) do
     children = [
-      {Bandit, plug: Rinha.Router},
+      {Bandit, plug: Rinha.Router, port: Application.get_env(:rinha, :port)},
       Rinha.Repo,
       {Ecto.Migrator,
        repos: Application.fetch_env!(:rinha, :ecto_repos), skip: skip_migrations?()},
-      {Rinha.Processor.Services, @services},
+      {Rinha.Processor.Services, Application.get_env(:rinha, :services)},
       Rinha.Queue,
       {Rinha.Worker, name: QueueWorker, job: &Rinha.pay/0},
       {Rinha.Worker,
@@ -20,13 +18,13 @@ defmodule Rinha.Application do
        job: fn ->
          Process.sleep((:rand.uniform(5) + 5) * 1_000)
          Rinha.Processor.Client.service_health()
-       end},
-      {Rinha.Worker,
-       name: RetryFailedPaymentsWorker,
-       job: fn ->
-         Process.sleep((:rand.uniform(5) + 5) * 1_000)
-         Rinha.retry_failed_payments()
        end}
+      # {Rinha.Worker,
+      #  name: RetryFailedPaymentsWorker,
+      #  job: fn ->
+      #    Process.sleep((:rand.uniform(5) + 5) * 1_000)
+      #    Rinha.retry_failed_payments()
+      #  end}
     ]
 
     opts = [strategy: :one_for_one, name: Rinha.Supervisor]
