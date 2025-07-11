@@ -65,11 +65,4 @@ defmodule Rinha do
         Logger.warning("Error during payment #{payment.correlation_id}: #{error}")
     end
   end
-
-  def retry_failed_payments do
-    Payment.list_failed_payments()
-    |> Enum.each(&complete_payment/1)
-
-    :ok
-  end
 end
