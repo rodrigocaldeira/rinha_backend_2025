@@ -18,7 +18,7 @@ Poderia ter usado Redis ou alguma outra solução de mensageria nesta implementa
 
 A solução principal foi utilizar [GenServers](https://hexdocs.pm/elixir/1.18.2/GenServer.html) para:
 - Gestão de estado, para ter em memória o estado mais recente dos payment processors (se estão falhando e o tempo de resposta)
-- Fila, para receber os requests de pagamento e devolver um response o mais rápido possível. Todos os pagamentos são pendentes são salvos em memória
+- Fila, para receber os requests de pagamento e devolver um response o mais rápido possível. Todos os pagamentos pendentes são salvos na fila, que é em memória
 - Processamento assíncrono dos pagamentos, através da criação de workers que consomem da fila e se integram com os payment processors. Foi inclusive implementada de uma solução para pool de workers, onde é possível configurar a quantidade de workers desejada
 
 ### Persistência de dados
