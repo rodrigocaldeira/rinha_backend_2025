@@ -1,11 +1,10 @@
 defmodule Rinha.Processor.Client do
   alias Rinha.Processor.Schemas.Payment
   alias Rinha.Processor.Services
-  alias Rinha.Schemas.Payment, as: InternalPayment
 
   require Logger
 
-  def pay(%InternalPayment{} = internal_payment) do
+  def pay(internal_payment) do
     payment = Payment.new(internal_payment)
 
     case Services.get_service() do

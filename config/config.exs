@@ -2,6 +2,12 @@ import Config
 
 config :rinha, ecto_repos: [Rinha.Repo]
 
+config :rinha, Rinha.Repo,
+  database: Path.expand("../rinha_dev.db", __DIR__),
+  pool_size: System.get_env("DATABASE_POOL_SIZE", "10") |> String.to_integer(),
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true
+
 config :rinha,
   port: System.get_env("PORT", "8080") |> String.to_integer(),
   worker_pool_size: System.get_env("WORKER_POOL_SIZE", "4") |> String.to_integer(),

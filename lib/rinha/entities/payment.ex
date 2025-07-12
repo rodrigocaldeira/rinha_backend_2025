@@ -1,20 +1,16 @@
 defmodule Rinha.Entities.Payment do
-  alias Ecto.Changeset
   alias Rinha.Repo
   alias Rinha.Schemas.Payment, as: PaymentSchema
   alias Rinha.Schemas.Support.Amount
 
   import Ecto.Query
 
-  def insert(payment) do
+  def pay(payment) do
     payment = %{payment | amount: Amount.to_integer(payment.amount)}
 
-    PaymentSchema.changeset(%PaymentSchema{}, payment)
+    %PaymentSchema{}
+    |> PaymentSchema.changeset(payment)
     |> Repo.insert()
-  end
-
-  def set_processor(payment, processor) do
-    Changeset.change(payment, %{processor: processor})
   end
 
   def purge, do: Repo.delete_all(PaymentSchema)
@@ -26,13 +22,13 @@ defmodule Rinha.Entities.Payment do
     date_conditions =
       cond do
         from_param && to_param ->
-          dynamic([p], p.inserted_at >= ^from_param and p.inserted_at <= ^to_param)
+          dynamic([p], p.requested_at >= ^from_param and p.requested_at <= ^to_param)
 
         from_param ->
-          dynamic([p], p.inserted_at >= ^from_param)
+          dynamic([p], p.requested_at >= ^from_param)
 
         to_param ->
-          dynamic([p], p.inserted_at <= ^to_param)
+          dynamic([p], p.requested_at <= ^to_param)
 
         true ->
           true

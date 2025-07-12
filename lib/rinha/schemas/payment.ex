@@ -6,17 +6,15 @@ defmodule Rinha.Schemas.Payment do
     field(:correlation_id)
     field(:amount, :integer)
     field(:processor)
-
-    timestamps(type: :utc_datetime_usec)
+    field(:requested_at, :utc_datetime_usec)
   end
 
-  @required_fields [:correlation_id, :amount]
-  @fields @required_fields ++ [:processor]
+  @fields [:correlation_id, :amount, :processor, :requested_at]
 
   def changeset(payment, attrs) do
     payment
     |> cast(attrs, @fields)
-    |> validate_required(@required_fields)
+    |> validate_required(@fields)
     |> unique_constraint(:correlation_id)
   end
 end
