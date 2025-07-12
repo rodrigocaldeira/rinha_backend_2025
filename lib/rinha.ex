@@ -5,22 +5,66 @@ defmodule Rinha do
 
   require Logger
 
+  @worker_node :worker@worker
+
   def register_payment(%{"correlationId" => correlation_id, "amount" => amount}) do
-    payment = %{
-      correlation_id: correlation_id,
-      amount: amount,
-      requested_at: DateTime.utc_now(:millisecond)
-    }
+    Task.async(fn ->
+      payment = %{
+        correlation_id: correlation_id,
+        amount: amount,
+        requested_at: DateTime.utc_now(:millisecond)
+      }
 
-    Rinha.Queue.enqueue(payment)
+      Rinha.enqueue(payment)
 
-    Logger.info("Registered payment #{inspect(payment)}")
+      Logger.info("Registered payment #{inspect(payment)}")
+    end)
+
+    :ok
   end
 
   def register_payment(payment) do
-    Logger.warning("Invalid payment params on registration: #{inspect(payment)}")
+    Logger.warning("Invalid payment: #{inspect(payment)}")
 
     :error
+  end
+
+  def enqueue(payment) do
+    role = Application.get_env(:rinha, :role)
+
+    if role == "api" do
+      Node.spawn(@worker_node, fn -> Rinha.Queue.enqueue(payment) end)
+    else
+      Rinha.Queue.enqueue(payment)
+    end
+  end
+
+  def summary(params) do
+    role = Application.get_env(:rinha, :role)
+
+    if role == "api" do
+      supervisor = {Rinha.TaskSupervisor, @worker_node}
+
+      Task.Supervisor.async(supervisor, Payment, :summary, [params])
+      |> Task.await()
+    else
+      Payment.summary(params)
+    end
+  end
+
+  def purge do
+    role = Application.get_env(:rinha, :role)
+
+    if role == "api" do
+      Node.spawn(@worker_node, fn -> Payment.purge() end)
+    else
+      Payment.purge()
+    end
+  end
+
+  def purge_all do
+    __MODULE__.purge()
+    Client.purge()
   end
 
   def pay do
@@ -44,13 +88,5 @@ defmodule Rinha do
       {:error, error} ->
         Logger.warning("Error paying #{payment.correlation_id}: #{error}")
     end
-  end
-
-  defdelegate purge, to: Payment
-  defdelegate summary(params), to: Payment
-
-  def purge_all do
-    __MODULE__.purge()
-    Client.purge()
   end
 end

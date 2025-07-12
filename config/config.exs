@@ -20,6 +20,7 @@ config :rinha,
       name: System.get_env("FALLBACK_SERVICE_NAME", "fallback"),
       url: System.get_env("FALLBACK_SERVICE_URL", "http://localhost:8002")
     }
-  ]
+  ],
+  role: System.get_env("ROLE", "POLYVALENT")
 
 import_config "#{config_env()}.exs"

@@ -57,14 +57,6 @@ defmodule Rinha.Entities.Payment do
     |> ensure_summary_integrity()
   end
 
-  def list_failed_payments do
-    from(p in PaymentSchema,
-      select: p,
-      where: is_nil(p.processor)
-    )
-    |> Repo.all()
-  end
-
   @summary_aggregates %{totalRequests: 0, totalAmount: 0}
 
   defp ensure_summary_integrity(summary) do

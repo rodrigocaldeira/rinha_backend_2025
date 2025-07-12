@@ -6,6 +6,7 @@ services:
     depends_on:
       - api01
       - api02
+      - worker
     ports:
       - "9999:9999"
     networks:
@@ -14,9 +15,36 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "0.2"
           memory: "30MB"
-  
+
+  worker:
+    hostname: worker
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    networks:
+      - rinha
+      - payment-processor
+    volumes:
+      - db:/db
+    environment:
+      - ROLE=worker
+      - DATABASE_PATH=/db/database1.db
+      - DATABASE_POOL_SIZE=18
+      - WORKER_POOL_SIZE=16
+      - DEFAULT_SERVICE_NAME=default
+      - DEFAULT_SERVICE_URL=http://payment-processor-default:8080
+      - FALLBACK_SERVICE_NAME=fallback
+      - FALLBACK_SERVICE_URL=http://payment-processor-fallback:8080
+      - RELEASE_NAME=worker
+      - RELEASE_COOKIE=rinha
+    deploy:
+      resources:
+        limits:
+          cpus: "0.6"
+          memory: "158MB"
+
   api01: &api
     hostname: api01
     build:
@@ -27,22 +55,18 @@ services:
     networks:
       - rinha
       - payment-processor
-    volumes:
-      - db:/db
     environment:
+      - ROLE=api
       - PORT=8080
-      - DATABASE_PATH=/db/database.db
-      - DATABASE_POOL_SIZE=5
-      - WORKER_POOL_SIZE=2
-      - DEFAULT_SERVICE_NAME=default
-      - DEFAULT_SERVICE_URL=http://payment-processor-default:8080
-      - FALLBACK_SERVICE_NAME=fallback
-      - FALLBACK_SERVICE_URL=http://payment-processor-fallback:8080
+      - RELEASE_NAME=api01
+      - RELEASE_COOKIE=rinha
+    depends_on:
+      - worker
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "160MB"
+          cpus: "0.35"
+          memory: "81MB"
 
   api02:
     <<: *api
@@ -50,16 +74,10 @@ services:
     ports:
       - "8081:8081"
     environment:
+      - ROLE=api
       - PORT=8081
-      - DATABASE_PATH=/db/database.db
-      - DATABASE_POOL_SIZE=5
-      - WORKER_POOL_SIZE=2
-      - DEFAULT_SERVICE_NAME=default
-      - DEFAULT_SERVICE_URL=http://payment-processor-default:8080
-      - FALLBACK_SERVICE_NAME=fallback
-      - FALLBACK_SERVICE_URL=http://payment-processor-fallback:8080
-    depends_on:
-      - api01
+      - RELEASE_NAME=api02
+      - RELEASE_COOKIE=rinha
 
 volumes:
   db:
