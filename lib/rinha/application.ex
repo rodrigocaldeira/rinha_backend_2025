@@ -12,8 +12,7 @@ defmodule Rinha.Application do
     children = [
       {Bandit, plug: Rinha.Router, port: port},
       Rinha.Repo,
-      {Ecto.Migrator,
-       repos: Application.fetch_env!(:rinha, :ecto_repos), skip: skip_migrations?()},
+      {Ecto.Migrator, repos: Application.fetch_env!(:rinha, :ecto_repos)},
       {Rinha.Processor.Services, services},
       Rinha.Queue,
       {Rinha.WorkerPool, size: worker_pool_size, job: &Rinha.pay/0},
@@ -27,9 +26,5 @@ defmodule Rinha.Application do
 
     opts = [strategy: :one_for_one, name: Rinha.Supervisor]
     Supervisor.start_link(children, opts)
-  end
-
-  defp skip_migrations? do
-    System.get_env("RELEASE_NAME") != nil
   end
 end
