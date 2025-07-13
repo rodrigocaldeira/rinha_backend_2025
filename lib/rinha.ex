@@ -87,6 +87,7 @@ defmodule Rinha do
 
       {:error, error} ->
         Logger.warning("Error paying #{payment.correlation_id}: #{error}")
+        Rinha.Queue.enqueue(payment)
     end
   end
 end

@@ -8,16 +8,15 @@ defmodule Rinha.Queue do
     GenServer.start_link(__MODULE__, defaults, name: Queue)
   end
 
-  def enqueue(message), do: GenServer.cast(Queue, {:enqueue, message})
+  def enqueue(message), do: GenServer.call(Queue, {:enqueue, message})
 
   def dequeue, do: GenServer.call(Queue, :dequeue, :infinity)
 
   @impl true
-  def handle_cast({:enqueue, message}, state) do
-    {:noreply, state ++ [message]}
+  def handle_call({:enqueue, message}, _from, state) do
+    {:reply, :ok, state ++ [message]}
   end
 
-  @impl true
   def handle_call(:dequeue, from, state) do
     Process.send(Queue, {:reply, from}, [])
     {:noreply, state}
@@ -25,7 +24,7 @@ defmodule Rinha.Queue do
 
   @impl true
   def handle_info({:reply, from}, []) do
-    Process.send(Queue, {:reply, from}, [])
+    Process.send_after(Queue, {:reply, from}, 100)
     {:noreply, []}
   end
 

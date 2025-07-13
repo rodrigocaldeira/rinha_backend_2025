@@ -73,3 +73,12 @@ Porém, para o desenvolvimento e testes locais não é necessário subir mais de
      transactions_success...........: 15229    249.41283/s
      vus............................: 79       min=9         max=499
 ```
+
+## TODO
+- [ ] Melhorar o throughput da fila
+- [ ] Certificar que nenhum pagamento está sendo perdido em casos de falha dos processors
+  - [ ] Serviço indisponível
+  - [ ] Falha de processamento por falha no processor
+  - [ ] correlationId duplicado, só chora e descarta o pagamento
+- [ ] Resolver questão de inconsistência dos valores
+- [ ] Fine tunning das configurações dos containers (10MB pro nginx parece ser o suficiente)

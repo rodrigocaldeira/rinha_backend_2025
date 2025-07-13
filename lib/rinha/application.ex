@@ -16,10 +16,7 @@ defmodule Rinha.Application do
   defp create_children("api") do
     port = Application.get_env(:rinha, :port)
 
-    [
-      {Bandit, plug: Rinha.Router, port: port},
-      {Task.Supervisor, name: Rinha.TaskSupervisor}
-    ]
+    [{Bandit, plug: Rinha.Router, port: port}]
   end
 
   defp create_children("worker") do
