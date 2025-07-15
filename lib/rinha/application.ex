@@ -32,31 +32,21 @@ defmodule Rinha.Application do
       {Rinha.Worker,
        name: ServicesHealthWorker,
        job: fn ->
-         Process.sleep((:rand.uniform(5) + 5) * 1_000)
+         Process.sleep(5_001)
          Rinha.Processor.Client.service_health()
        end},
-      {Task.Supervisor, name: Rinha.TaskSupervisor}
+      {Task.Supervisor, name: Rinha.TaskSupervisor},
+      {Finch,
+       name: Rinha.Finch,
+       pools: %{
+         default: [
+           size: 200
+         ]
+       }}
     ]
   end
 
   defp create_children(_) do
-    port = Application.get_env(:rinha, :port)
-    services = Application.get_env(:rinha, :services)
-    worker_pool_size = Application.get_env(:rinha, :worker_pool_size)
-
-    [
-      {Bandit, plug: Rinha.Router, port: port},
-      Rinha.Repo,
-      {Ecto.Migrator, repos: Application.fetch_env!(:rinha, :ecto_repos)},
-      {Rinha.Processor.Services, services},
-      Rinha.Queue,
-      {Rinha.WorkerPool, size: worker_pool_size, job: &Rinha.pay/0},
-      {Rinha.Worker,
-       name: ServicesHealthWorker,
-       job: fn ->
-         Process.sleep((:rand.uniform(5) + 5) * 1_000)
-         Rinha.Processor.Client.service_health()
-       end}
-    ]
+    create_children("api") ++ create_children("worker")
   end
 end

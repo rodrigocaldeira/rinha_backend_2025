@@ -1,13 +1,10 @@
 defmodule Rinha.Entities.Payment do
   alias Rinha.Repo
   alias Rinha.Schemas.Payment, as: PaymentSchema
-  alias Rinha.Schemas.Support.Amount
 
   import Ecto.Query
 
   def pay(payment) do
-    payment = %{payment | amount: Amount.to_integer(payment.amount)}
-
     %PaymentSchema{}
     |> PaymentSchema.changeset(payment)
     |> Repo.insert()
@@ -50,7 +47,7 @@ defmodule Rinha.Entities.Payment do
       values =
         payment
         |> Map.delete(:processor)
-        |> Map.update(:totalAmount, 0, &Amount.to_float(&1))
+        |> Map.update(:totalAmount, 0, &Float.round(&1, 2))
 
       {String.to_existing_atom(payment.processor), values}
     end)

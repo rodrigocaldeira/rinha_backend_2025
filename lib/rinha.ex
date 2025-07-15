@@ -1,7 +1,6 @@
 defmodule Rinha do
   alias Rinha.Entities.Payment
   alias Rinha.Processor.Client
-  alias Rinha.Schemas.Support.Error
 
   require Logger
 
@@ -33,7 +32,7 @@ defmodule Rinha do
     role = Application.get_env(:rinha, :role)
 
     if role == "api" do
-      Node.spawn(@worker_node, fn -> Rinha.Queue.enqueue(payment) end)
+      Node.spawn(@worker_node, Rinha.Queue, :enqueue, [payment])
     else
       Rinha.Queue.enqueue(payment)
     end
@@ -76,18 +75,12 @@ defmodule Rinha do
         payment = Map.put(payment, :processor, processor)
 
         Payment.pay(payment)
-        |> case do
-          {:ok, _} ->
-            Logger.info("Payment #{payment.correlation_id} done.")
+        Logger.info("Payment #{payment.correlation_id} done.")
 
-          {:error, changeset} ->
-            error = Error.extract_error(:payment, changeset)
-            Logger.warning("Error paying #{payment.correlation_id}: #{error}")
-        end
-
-      {:error, error} ->
-        Logger.warning("Error paying #{payment.correlation_id}: #{error}")
+      :error ->
+        Logger.warning("Retrying payment #{payment.correlation_id}.")
         Rinha.Queue.enqueue(payment)
+        :ok
     end
   end
 end

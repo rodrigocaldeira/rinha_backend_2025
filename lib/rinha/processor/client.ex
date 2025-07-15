@@ -11,26 +11,31 @@ defmodule Rinha.Processor.Client do
       {:ok, service} ->
         Logger.info("Sending payment #{payment.correlationId} to #{service.name}")
 
-        Req.post("#{service.url}/payments", json: payment)
+        Req.post("#{service.url}/payments",
+          json: payment,
+          # retry: :transient,
+          finch: Rinha.Finch
+        )
         |> case do
           {:ok, %Req.Response{status: 200}} ->
             {:ok, service.name}
 
-          error ->
-            Logger.error("Error sending payment to processor #{service.name}: #{inspect(error)}")
-            {:error, :processor_error}
+          _error ->
+            :error
         end
 
-      {:error, :no_service_available} = error ->
-        Logger.error("No service available at the moment")
-        error
+      {:error, :no_service_available} ->
+        :error
     end
   end
 
   def service_health do
     Services.all_services()
     |> Enum.each(fn service ->
-      Req.get("#{service.url}/payments/service-health")
+      Req.get("#{service.url}/payments/service-health",
+        retry: false,
+        finch: Rinha.Finch
+      )
       |> case do
         {:ok,
          %Req.Response{

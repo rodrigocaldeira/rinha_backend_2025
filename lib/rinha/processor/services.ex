@@ -1,38 +1,19 @@
 defmodule Rinha.Processor.Services do
-  use GenServer
-
-  @impl true
-  def init(args), do: {:ok, init_services(args)}
+  use Agent
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: ProcessorServices)
+    Agent.start_link(fn -> init_services(args) end, name: __MODULE__)
   end
 
   def all_services do
-    GenServer.call(ProcessorServices, :all_services)
+    Agent.get(__MODULE__, & &1)
   end
 
   def get_service do
-    GenServer.call(ProcessorServices, :get_service)
-  end
+    Agent.get(__MODULE__, fn services ->
+      default = get_service_by_name(services, "default")
+      fallback = get_service_by_name(services, "fallback")
 
-  def set_service_health(name, failing, min_response_time) do
-    GenServer.cast(
-      ProcessorServices,
-      {:set_service_health, name, failing, min_response_time}
-    )
-  end
-
-  @impl true
-  def handle_call(:all_services, _from, services) do
-    {:reply, services, services}
-  end
-
-  def handle_call(:get_service, _from, services) do
-    default = get_service_by_name(services, "default")
-    fallback = get_service_by_name(services, "fallback")
-
-    service =
       cond do
         default.failing and fallback.failing ->
           {:error, :no_service_available}
@@ -47,24 +28,21 @@ defmodule Rinha.Processor.Services do
         true ->
           {:ok, default}
       end
-
-    {:reply, service, services}
+    end)
   end
 
-  @impl true
-  def handle_cast({:set_service_health, name, failing, min_response_time}, services) do
-    service = %{
-      get_service_by_name(services, name)
-      | failing: failing,
-        min_response_time: min_response_time
-    }
+  def set_service_health(name, failing, min_response_time) do
+    Agent.update(__MODULE__, fn services ->
+      service = %{
+        get_service_by_name(services, name)
+        | failing: failing,
+          min_response_time: min_response_time
+      }
 
-    services =
       services
       |> Enum.filter(&(&1.name != name))
       |> Kernel.++([service])
-
-    {:noreply, services}
+    end)
   end
 
   defp init_services(args) do
