@@ -22,11 +22,8 @@ defmodule Rinha.Router do
   end
 
   post "/payments" do
-    Rinha.register_payment(conn.body_params)
-    |> case do
-      :ok -> send_resp(conn, 201, "")
-      :error -> bad_request(conn)
-    end
+    Task.async(fn -> Rinha.register_payment(conn.body_params) end)
+    send_resp(conn, 201, "")
   end
 
   post "/purge-payments" do

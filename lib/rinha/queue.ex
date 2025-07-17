@@ -1,38 +1,45 @@
 defmodule Rinha.Queue do
   use GenServer
 
-  @impl true
-  def init(_), do: {:ok, :queue.new()}
+  @empty_queue :queue.new()
 
-  def start_link(queue) do
-    GenServer.start_link(__MODULE__, queue, name: Queue)
+  @impl true
+  def init(_), do: {:ok, {@empty_queue, @empty_queue}}
+
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: Queue)
   end
 
-  def enqueue(message), do: GenServer.cast(Queue, {:enqueue, message})
+  def enqueue(item), do: Process.send(Queue, {:enqueue, item}, [])
 
   def dequeue, do: GenServer.call(Queue, :dequeue, :infinity)
 
   @impl true
-  def handle_cast({:enqueue, message}, queue) do
-    queue = :queue.in(message, queue)
-    {:noreply, queue}
+  def handle_call(:dequeue, worker, {items, workers}) do
+    {:noreply, {items, :queue.in(worker, workers)}, {:continue, :dequeue}}
   end
 
   @impl true
-  def handle_call(:dequeue, from, queue) do
-    Process.send(Queue, {:reply, from}, [])
-    {:noreply, queue}
+  def handle_info({:enqueue, item}, {items, workers}) do
+    items = :queue.in(item, items)
+
+    {:noreply, {items, workers}, {:continue, :dequeue}}
   end
 
   @impl true
-  def handle_info({:reply, from}, {[], []}) do
-    Process.send(Queue, {:reply, from}, [])
-    {:noreply, {[], []}}
+  def handle_continue(:dequeue, {@empty_queue, _workers} = state) do
+    {:noreply, state}
   end
 
-  def handle_info({:reply, from}, queue) do
-    {{:value, message}, queue} = :queue.out(queue)
-    GenServer.reply(from, message)
-    {:noreply, queue}
+  def handle_continue(:dequeue, {_items, @empty_queue} = state) do
+    {:noreply, state}
+  end
+
+  def handle_continue(:dequeue, {items, workers}) do
+    {{:value, item}, items} = :queue.out(items)
+    {{:value, worker}, workers} = :queue.out(workers)
+
+    GenServer.reply(worker, item)
+    {:noreply, {items, workers}, {:continue, :dequeue}}
   end
 end

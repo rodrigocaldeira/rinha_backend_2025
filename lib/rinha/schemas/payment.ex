@@ -2,14 +2,14 @@ defmodule Rinha.Schemas.Payment do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:correlationId, :binary_id, autogenerate: false}
   schema "payments" do
-    field(:correlation_id)
     field(:amount, :float)
     field(:processor)
-    field(:requested_at, :utc_datetime_usec)
+    field(:requestedAt, :utc_datetime_usec)
   end
 
-  @fields [:correlation_id, :amount, :processor, :requested_at]
+  @fields [:correlationId, :amount, :processor, :requestedAt]
 
   def changeset(payment, attrs) do
     payment

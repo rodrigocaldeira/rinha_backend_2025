@@ -4,28 +4,37 @@ defmodule Rinha.Processor.Client do
 
   require Logger
 
-  def pay(internal_payment) do
-    payment = Payment.new(internal_payment)
-
+  def pay(payment) do
     case Services.get_service() do
       {:ok, service} ->
-        Logger.info("Sending payment #{payment.correlationId} to #{service.name}")
+        Logger.info("Sending payment #{payment["correlationId"]} to #{service.name}")
 
         Req.post("#{service.url}/payments",
           json: payment,
-          # retry: :transient,
-          finch: Rinha.Finch
+          finch: Rinha.Finch,
+          retry: false
         )
         |> case do
           {:ok, %Req.Response{status: 200}} ->
             {:ok, service.name}
+
+          {:ok, %Req.Response{status: 500}} ->
+            Services.set_service_health(service.name, true, service.min_response_time)
+            Logger.warning("Service #{service.name} down.")
+            pay(payment)
+
+          {:ok, %Req.Response{status: 429}} ->
+            Services.set_service_health(service.name, true, service.min_response_time)
+            Logger.warning("Service #{service.name} overloaded.")
+            pay(payment)
 
           _error ->
             :error
         end
 
       {:error, :no_service_available} ->
-        :error
+        Process.sleep(500)
+        pay(payment)
     end
   end
 

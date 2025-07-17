@@ -19,13 +19,13 @@ defmodule Rinha.Entities.Payment do
     date_conditions =
       cond do
         from_param && to_param ->
-          dynamic([p], p.requested_at >= ^from_param and p.requested_at <= ^to_param)
+          dynamic([p], p.requestedAt >= ^from_param and p.requestedAt <= ^to_param)
 
         from_param ->
-          dynamic([p], p.requested_at >= ^from_param)
+          dynamic([p], p.requestedAt >= ^from_param)
 
         to_param ->
-          dynamic([p], p.requested_at <= ^to_param)
+          dynamic([p], p.requestedAt <= ^to_param)
 
         true ->
           true
@@ -37,7 +37,7 @@ defmodule Rinha.Entities.Payment do
       group_by: p.processor,
       select: %{
         processor: p.processor,
-        totalRequests: count(p.id),
+        totalRequests: count(p.correlationId),
         totalAmount: sum(p.amount)
       },
       where: ^conditions
