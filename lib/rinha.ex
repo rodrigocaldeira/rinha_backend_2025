@@ -6,33 +6,17 @@ defmodule Rinha do
 
   @worker_node :worker@worker
 
-  def register_payment(payment) do
-    Rinha.enqueue(Map.put(payment, "requestedAt", DateTime.utc_now(:millisecond)))
-  end
-
-  def enqueue(payment) do
-    role = Application.get_env(:rinha, :role)
-
-    if role == "api" do
-      send({Queue, @worker_node}, {:enqueue, payment})
-    else
-      Rinha.Queue.enqueue(payment)
-    end
-  end
-
   def pay do
     payment = Rinha.Queue.dequeue()
 
     Client.pay(payment)
     |> case do
-      {:ok, processor} ->
-        payment = Map.put(payment, "processor", processor)
-
-        Payment.pay(payment)
-        Logger.info("Payment #{payment["correlationId"]} done.")
+      {:ok, payment_on_processor} ->
+        Payment.pay(payment_on_processor)
+        Logger.info("#{payment["correlationId"]} OK")
 
       :error ->
-        Logger.warning("Retrying payment #{payment["correlationId"]}.")
+        Logger.warning("#{payment["correlationId"]} failed")
         Rinha.Queue.enqueue(payment)
         :ok
     end
@@ -59,10 +43,5 @@ defmodule Rinha do
     else
       Payment.purge()
     end
-  end
-
-  def purge_all do
-    __MODULE__.purge()
-    Client.purge()
   end
 end

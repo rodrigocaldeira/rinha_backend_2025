@@ -10,7 +10,7 @@ defmodule Rinha.Queue do
     GenServer.start_link(__MODULE__, args, name: Queue)
   end
 
-  def enqueue(item), do: Process.send(Queue, {:enqueue, item}, [])
+  def enqueue(item), do: send(Queue, {:enqueue, item})
 
   def dequeue, do: GenServer.call(Queue, :dequeue, :infinity)
 

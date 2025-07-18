@@ -21,6 +21,7 @@ config :rinha,
       url: System.get_env("FALLBACK_SERVICE_URL", "http://localhost:8002")
     }
   ],
-  role: System.get_env("ROLE", "POLYVALENT")
+  role: System.get_env("ROLE", "ISOLATE"),
+  queue_address: Queue
 
 import_config "#{config_env()}.exs"

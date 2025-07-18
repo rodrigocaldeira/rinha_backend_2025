@@ -1,5 +1,4 @@
 defmodule Rinha.Processor.Client do
-  alias Rinha.Processor.Schemas.Payment
   alias Rinha.Processor.Services
 
   require Logger
@@ -7,33 +6,24 @@ defmodule Rinha.Processor.Client do
   def pay(payment) do
     case Services.get_service() do
       {:ok, service} ->
-        Logger.info("Sending payment #{payment["correlationId"]} to #{service.name}")
+        Logger.info("#{payment["correlationId"]} => #{service.name}")
 
-        Req.post("#{service.url}/payments",
-          json: payment,
-          finch: Rinha.Finch,
-          retry: false
+        :httpc.request(
+          :post,
+          {"#{service.url}/payments", [], ~c"application/json",
+           :json.encode(payment) |> to_string()},
+          [],
+          []
         )
         |> case do
-          {:ok, %Req.Response{status: 200}} ->
-            {:ok, service.name}
-
-          {:ok, %Req.Response{status: 500}} ->
-            Services.set_service_health(service.name, true, service.min_response_time)
-            Logger.warning("Service #{service.name} down.")
-            pay(payment)
-
-          {:ok, %Req.Response{status: 429}} ->
-            Services.set_service_health(service.name, true, service.min_response_time)
-            Logger.warning("Service #{service.name} overloaded.")
-            pay(payment)
+          {:ok, {{_, 200, _}, _, _}} ->
+            {:ok, Map.put(payment, "processor", service.name)}
 
           _error ->
-            :error
+            pay(payment)
         end
 
       {:error, :no_service_available} ->
-        Process.sleep(500)
         pay(payment)
     end
   end
@@ -41,35 +31,19 @@ defmodule Rinha.Processor.Client do
   def service_health do
     Services.all_services()
     |> Enum.each(fn service ->
-      Req.get("#{service.url}/payments/service-health",
-        retry: false,
-        finch: Rinha.Finch
-      )
+      :httpc.request("#{service.url}/payments/service-health")
       |> case do
-        {:ok,
-         %Req.Response{
-           status: 200,
-           body: %{
-             "failing" => failing,
-             "minResponseTime" => minResponseTime
-           }
-         }} ->
-          Services.set_service_health(service.name, failing, minResponseTime)
+        {:ok, {{_, 200, _}, _, body}} ->
+          %{
+            "failing" => failing,
+            "minResponseTime" => min_response_time
+          } = :json.decode(to_string(body))
+
+          Services.set_service_health(service.name, failing, min_response_time)
 
         error ->
           Logger.warning("Error checking service health: #{error}")
       end
-    end)
-
-    :ok
-  end
-
-  def purge do
-    Services.all_services()
-    |> Enum.each(fn service ->
-      Req.post("#{service.url}/admin/purge-payments",
-        headers: [{"X-Rinha-Token", "123"}]
-      )
     end)
 
     :ok

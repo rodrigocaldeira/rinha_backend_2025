@@ -35,14 +35,7 @@ defmodule Rinha.Application do
          Process.sleep(5_001)
          Rinha.Processor.Client.service_health()
        end},
-      {Task.Supervisor, name: Rinha.TaskSupervisor},
-      {Finch,
-       name: Rinha.Finch,
-       pools: %{
-         default: [
-           size: 200
-         ]
-       }}
+      {Task.Supervisor, name: Rinha.TaskSupervisor}
     ]
   end
 

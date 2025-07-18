@@ -7,7 +7,8 @@ if config_env() == :prod do
     "api" ->
       config :rinha,
         port: System.get_env("PORT", "4000") |> String.to_integer(),
-        role: role
+        role: role,
+        queue_address: {Queue, :worker@worker}
 
     "worker" ->
       database_path =

@@ -4,17 +4,18 @@ defmodule Rinha.Router do
   plug(Plug.Logger)
 
   plug(Plug.Parsers,
-    parsers: [:urlencoded, :json],
-    json_decoder: Jason
+    parsers: [:urlencoded],
+    pass: ["application/json"]
   )
 
   plug(:match)
   plug(:dispatch)
 
   get "/payments-summary" do
-    {:ok, summary} =
+    summary =
       Rinha.summary(conn.query_params)
-      |> Jason.encode()
+      |> :json.encode()
+      |> to_string()
 
     conn
     |> put_resp_content_type("application/json")
@@ -22,7 +23,19 @@ defmodule Rinha.Router do
   end
 
   post "/payments" do
-    Task.async(fn -> Rinha.register_payment(conn.body_params) end)
+    {:ok, body, conn} = Plug.Conn.read_body(conn, [])
+    worker_address = Application.get_env(:rinha, :queue_address)
+
+    send(
+      worker_address,
+      {:enqueue,
+       Map.put(
+         :json.decode(body),
+         "requestedAt",
+         DateTime.to_iso8601(DateTime.utc_now(:millisecond))
+       )}
+    )
+
     send_resp(conn, 201, "")
   end
 
