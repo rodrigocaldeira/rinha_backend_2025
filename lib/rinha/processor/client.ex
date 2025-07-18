@@ -20,6 +20,7 @@ defmodule Rinha.Processor.Client do
             {:ok, Map.put(payment, "processor", service.name)}
 
           _error ->
+            Services.set_service_health(service.name, true, service.min_response_time)
             pay(payment)
         end
 
