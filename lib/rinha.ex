@@ -13,7 +13,7 @@ defmodule Rinha do
     |> case do
       {:ok, payment_on_processor} ->
         # Payment.pay(payment_on_processor)
-        Rinha.DB.insert_payment(payment_on_processor)
+        Rinha.DB.pay(payment_on_processor)
         Logger.info("#{payment["correlationId"]} OK")
 
       :error ->

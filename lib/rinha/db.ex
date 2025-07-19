@@ -9,7 +9,7 @@ defmodule Rinha.DB do
     Agent.update(__MODULE__, fn _ -> [] end)
   end
 
-  def insert_payment(payment) do
+  def pay(payment) do
     Agent.update(__MODULE__, fn payments -> payments ++ [payment] end)
   end
 
