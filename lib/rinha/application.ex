@@ -35,7 +35,8 @@ defmodule Rinha.Application do
          Process.sleep(5_001)
          Rinha.Processor.Client.service_health()
        end},
-      {Task.Supervisor, name: Rinha.TaskSupervisor}
+      {Task.Supervisor, name: Rinha.TaskSupervisor},
+      Rinha.DB
     ]
   end
 
