@@ -25,12 +25,8 @@ services:
     networks:
       - rinha
       - payment-processor
-    volumes:
-      - db:/db
     environment:
       - ROLE=worker
-      - DATABASE_PATH=/db/database1.db
-      - DATABASE_POOL_SIZE=10
       - WORKER_POOL_SIZE=4
       - DEFAULT_SERVICE_NAME=default
       - DEFAULT_SERVICE_URL=http://payment-processor-default:8080
@@ -76,9 +72,6 @@ services:
       - PORT=8081
       - RELEASE_NAME=api02
       - RELEASE_COOKIE=rinha
-
-volumes:
-  db:
 
 networks:
   rinha:

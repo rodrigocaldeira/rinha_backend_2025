@@ -24,8 +24,6 @@ defmodule Rinha.Application do
     worker_pool_size = Application.get_env(:rinha, :worker_pool_size)
 
     [
-      Rinha.Repo,
-      {Ecto.Migrator, repos: Application.fetch_env!(:rinha, :ecto_repos)},
       {Rinha.Processor.Services, services},
       Rinha.Queue,
       {Rinha.WorkerPool, size: worker_pool_size, job: &Rinha.pay/0},

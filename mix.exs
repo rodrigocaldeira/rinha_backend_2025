@@ -20,35 +20,14 @@ defmodule Rinha.MixProject do
     ]
   end
 
-  def extra_applications("api") do
-    [:logger]
-  end
-
-  def extra_applications("worker") do
-    [:logger, :inets]
-  end
-
-  def extra_applications(_) do
-    [:logger, :runtime_tools, :inets]
-  end
+  def extra_applications("api"), do: [:logger]
+  def extra_applications("worker"), do: [:logger, :inets]
+  def extra_applications(_), do: [:logger, :runtime_tools, :inets]
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  defp deps do
-    [
-      {:bandit, "~> 1.7.0"},
-      {:ecto, "~> 3.10"},
-      {:ecto_sqlite3, ">= 0.0.0"}
-    ]
-  end
+  defp deps, do: [{:bandit, "~> 1.7.0"}]
 
-  defp aliases do
-    [
-      setup: ["deps.get", "ecto.setup"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
-    ]
-  end
+  defp aliases, do: [setup: ["deps.get"]]
 end

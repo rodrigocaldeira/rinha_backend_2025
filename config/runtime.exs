@@ -1,7 +1,7 @@
 import Config
 
 if config_env() == :prod do
-  role = System.get_env("ROLE", "polyvalent")
+  role = System.get_env("ROLE", "isolate")
 
   case role do
     "api" ->
@@ -11,16 +11,6 @@ if config_env() == :prod do
         queue_address: {Queue, :worker@worker}
 
     "worker" ->
-      database_path =
-        System.get_env("DATABASE_PATH") ||
-          raise """
-          Please, set DATABASE_PATH env var
-          """
-
-      config :rinha, Rinha.Repo,
-        database: database_path,
-        pool_size: System.get_env("DATABASE_POOL_SIZE", "10") |> String.to_integer()
-
       config :rinha,
         worker_pool_size: System.get_env("WORKER_POOL_SIZE", "4") |> String.to_integer(),
         services: [
@@ -36,16 +26,6 @@ if config_env() == :prod do
         role: role
 
     _ ->
-      database_path =
-        System.get_env("DATABASE_PATH") ||
-          raise """
-          Please, set DATABASE_PATH env var
-          """
-
-      config :rinha, Rinha.Repo,
-        database: database_path,
-        pool_size: System.get_env("DATABASE_POOL_SIZE", "10") |> String.to_integer()
-
       config :rinha,
         port: System.get_env("PORT", "4000") |> String.to_integer(),
         worker_pool_size: System.get_env("WORKER_POOL_SIZE", "4") |> String.to_integer(),
