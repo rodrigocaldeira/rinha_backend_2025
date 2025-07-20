@@ -25,7 +25,7 @@ defmodule Rinha.DB do
           total_requests = processor["totalRequests"] + 1
 
           %{
-            "totalAmount" => total_amount,
+            "totalAmount" => Float.round(total_amount, 2),
             "totalRequests" => total_requests
           }
         end)
