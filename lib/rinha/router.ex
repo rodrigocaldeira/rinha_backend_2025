@@ -1,8 +1,6 @@
 defmodule Rinha.Router do
   use Plug.Router
 
-  plug(Plug.Logger)
-
   plug(Plug.Parsers,
     parsers: [:urlencoded],
     pass: ["application/json"]
@@ -11,9 +9,13 @@ defmodule Rinha.Router do
   plug(:match)
   plug(:dispatch)
 
+  get "/health-check" do
+    send_resp(conn, 200, "")
+  end
+
   get "/payments-summary" do
     summary =
-      Rinha.summary(conn.query_params)
+      Rinha.summary(conn.query_params["from"], conn.query_params["to"])
       |> :json.encode()
       |> to_string()
 
@@ -24,16 +26,13 @@ defmodule Rinha.Router do
 
   post "/payments" do
     {:ok, body, conn} = Plug.Conn.read_body(conn, [])
-    worker_address = Application.get_env(:rinha, :queue_address)
 
-    send(
-      worker_address,
-      {:enqueue,
-       Map.put(
-         :json.decode(body),
-         "requestedAt",
-         DateTime.to_iso8601(DateTime.utc_now(:millisecond))
-       )}
+    Rinha.Queue.enqueue(
+      Map.put(
+        :json.decode(body),
+        "requestedAt",
+        DateTime.to_iso8601(DateTime.utc_now(:millisecond))
+      )
     )
 
     send_resp(conn, 201, "")
@@ -41,7 +40,6 @@ defmodule Rinha.Router do
 
   post "/purge-payments" do
     Rinha.purge()
-
     send_resp(conn, 200, "")
   end
 
@@ -49,11 +47,5 @@ defmodule Rinha.Router do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(404, "{\"error\":\"Not found\"}")
-  end
-
-  def bad_request(conn) do
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(400, "{\"error\":\"Bad request\"}")
   end
 end

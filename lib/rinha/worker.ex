@@ -1,24 +1,24 @@
 defmodule Rinha.Worker do
   use GenServer
 
-  require Logger
-
   @impl true
-  def init(args), do: {:ok, args, {:continue, :execute}}
+  def init(args) do
+    Process.send_after(self(), :execute, 0)
+    {:ok, args}
+  end
 
   def start_link(args) do
     name = Keyword.get(args, :name)
     job = Keyword.get(args, :job)
 
-    Logger.info("Starting worker #{name}")
-
     GenServer.start_link(__MODULE__, %{job: job}, name: name)
   end
 
   @impl true
-  def handle_continue(:execute, %{job: job} = state) do
+  def handle_info(:execute, %{job: job} = state) do
     job.()
-    {:noreply, state, {:continue, :execute}}
+    Process.send_after(self(), :execute, 1)
+    {:noreply, state}
   end
 
   def child_spec(args) do

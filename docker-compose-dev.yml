@@ -4,9 +4,10 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - api01
-      - api02
-      - worker
+      api01:
+        condition: service_healthy
+      api02:
+        condition: service_healthy
     ports:
       - "9999:80"
     networks:
@@ -14,64 +15,56 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.08"
+          cpus: "0.1"
           memory: "10MB"
 
-  worker:
-    hostname: worker
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  api01: &api
+    hostname: api01
+    build: .
     networks:
       - rinha
       - payment-processor
     environment:
-      - ROLE=worker
-      - WORKER_POOL_SIZE=4
+      - WORKER_POOL_SIZE=20
       - DEFAULT_SERVICE_NAME=default
       - DEFAULT_SERVICE_URL=http://payment-processor-default:8080
       - FALLBACK_SERVICE_NAME=fallback
       - FALLBACK_SERVICE_URL=http://payment-processor-fallback:8080
-      - RELEASE_NAME=worker
+      - RELEASE_NODE=api01@api01
       - RELEASE_COOKIE=rinha
+      - CLUSTER_NODE=api02@api02
+      - ERL_MAX_PORTS=4096
+    healthcheck:
+      test: curl -f http://api01:4000/health-check
+      timeout: 15s
+      start_period: 30s
+      start_interval: 1s
+      retries: 3
     deploy:
       resources:
         limits:
-          cpus: "0.82"
-          memory: "140MB"
-
-  api01: &api
-    hostname: api01
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    ports:
-      - "8080:8080"
-    networks:
-      - rinha
-    environment:
-      - ROLE=api
-      - PORT=8080
-      - RELEASE_NAME=api01
-      - RELEASE_COOKIE=rinha
-    depends_on:
-      - worker
-    deploy:
-      resources:
-        limits:
-          cpus: "0.3"
-          memory: "100MB"
+          cpus: "0.7"
+          memory: "170MB"
 
   api02:
     <<: *api
     hostname: api02
-    ports:
-      - "8081:8081"
     environment:
-      - ROLE=api
-      - PORT=8081
-      - RELEASE_NAME=api02
+      - WORKER_POOL_SIZE=20
+      - DEFAULT_SERVICE_NAME=default
+      - DEFAULT_SERVICE_URL=http://payment-processor-default:8080
+      - FALLBACK_SERVICE_NAME=fallback
+      - FALLBACK_SERVICE_URL=http://payment-processor-fallback:8080
+      - RELEASE_NODE=api02@api02
       - RELEASE_COOKIE=rinha
+      - CLUSTER_NODE=api01@api01
+      - ERL_MAX_PORTS=4096
+    healthcheck:
+      test: curl -f http://api02:4000/health-check
+      timeout: 15s
+      start_period: 30s
+      start_interval: 1s
+      retries: 3
 
 networks:
   rinha:
